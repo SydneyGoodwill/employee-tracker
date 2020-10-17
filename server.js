@@ -40,127 +40,215 @@ function runSearch() {
     .then(function(answer) {
       switch (answer.action) {
       case "Add departments":
-        addDepartments();
+        addDepartment();
         break;
 
-      case "Find all artists who appear more than once":
-        multiSearch();
+      case "Add roles":
+        addRole();
         break;
 
-      case "Find data within a specific range":
-        rangeSearch();
+      case "Add employees":
+        addEmployee();
         break;
 
-      case "Search for a specific song":
-        songSearch();
+      case "View departments":
+        viewDepartment();
+        break;
+
+      case "View roles":
+        viewRole();
+        break;
+      
+      case "View employees":
+        viewEmployee();
+        break;
+
+      case "Update employee roles":
+        updateRoles();
         break;
 
       case "exit":
-        connection.end();
+        end();
         break;
       }
     });
 }
 
-function addDepartments() {
+function addDepartment() {
   inquirer
     .prompt({
-      name: "artist",
+      name: "dept",
       type: "input",
-      message: "Which department(s) would you like to add?"
+      message: "Which department would you like to add?"
     })
     .then(function(answer) {
-      var query = "INSERT INTO department (name) VALUES (input)";
-      connection.query(query, { name: answer.name }, function(err, res) {
-        if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-          console.log("Position: " + res[i].position + " || Song: " + res[i].song + " || Year: " + res[i].year);
-        }
-        runSearch();
-      });
+        var query = connection.query(
+            "INSERT INTO department SET ?",
+            {
+              name: answer.dept,
+            },
+            function(err, res) {
+              if (err) throw err;
+              console.log(res.affectedRows + " product inserted!\n");
+          
+            }
+          )
+          runSearch();
     });
 }
 
-function multiSearch() {
-  var query = "SELECT artist FROM top5000 GROUP BY artist HAVING count(*) > 1";
-  connection.query(query, function(err, res) {
-    if (err) throw err;
-    for (var i = 0; i < res.length; i++) {
-      console.log(res[i].artist);
-    }
-    runSearch();
-  });
+
+// SELECT ALL FROM roles... (for viewing)
+
+function addRole() {
+    inquirer
+    .prompt([{
+      name: "role",
+      type: "input",
+      message: "Which role title would you like to add?"
+    },
+    {
+        name: "salary",
+        type: "input",
+        message: "What is the salary for this role?"
+    },
+    {
+        name: "department_id",
+        type: "input",
+        message: "What is your department's ID?"
+    }])
+    .then(function(answer) {
+        var query = connection.query(
+            "INSERT INTO role SET ?",
+            {
+              title: answer.role,
+              salary: answer.salary,
+              department_id: answer.department_id
+            },
+            function(err, res) {
+              if (err) throw err;
+              console.log(res.affectedRows + " product inserted!\n");
+          
+            }
+          )
+          runSearch();
+    });
+  }
+
+
+
+
+
+
+function addEmployee() {
+    inquirer
+    .prompt([{
+      name: "first_name",
+      type: "input",
+      message: "What is the employee's first name?"
+    },
+    {
+        name: "last_name",
+        type: "input",
+        message: "What is the employee's last name?"
+    },
+    {
+        name: "role_id",
+        type: "input",
+        message: "What is your department's ID?"
+    },
+    {
+        name: "manager_id",
+        type: "input",
+        message: "What is the manager ID?"
+    
+    }])
+    .then(function(answer) {
+        var query = connection.query(
+            "INSERT INTO employee SET ?",
+            {
+              first_name: answer.first_name,
+              last_name: answer.last_name,
+              role_id: answer.role_id,
+              manager_id: answer.manager_id
+
+            },
+            function(err, res) {
+              if (err) throw err;
+              console.log(res.affectedRows + " product inserted!\n");
+          
+            }
+          )
+          runSearch();
+    });
 }
 
-function rangeSearch() {
-  inquirer
-    .prompt([
-      {
-        name: "start",
-        type: "input",
-        message: "Enter starting position: ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
+function viewDepartment() {
+  var query = "SELECT * FROM department";
+  connection.query(query, function (err, res) {
+      if (err) throw err;
+      console.table(res);
+
+
+      runSearch();
+  })
+}
+
+function viewRole() {
+    var query = "SELECT * FROM role";
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.table(res);
+  
+  
+        runSearch();
+    })
+  }
+
+  function viewEmployee() {
+    var query = "SELECT * FROM employee";
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.table(res);
+  
+  
+        runSearch();
+    })
+  }
+
+  function updateRoles() {
+      inquirer
+      .prompt([{
+          name: "employeeUpdate",
+          type: "input",
+          message: "What is the first name of the employee you want to update?"
       },
       {
-        name: "end",
-        type: "input",
-        message: "Enter ending position: ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
+          name: "updateRole",
+          type: "input",
+          message: "What is the ID of the role they are being updated to?"
       }
     ])
     .then(function(answer) {
-      var query = "SELECT position,song,artist,year FROM top5000 WHERE position BETWEEN ? AND ?";
-      connection.query(query, [answer.start, answer.end], function(err, res) {
-        if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-          console.log(
-            "Position: " +
-              res[i].position +
-              " || Song: " +
-              res[i].song +
-              " || Artist: " +
-              res[i].artist +
-              " || Year: " +
-              res[i].year
-          );
-        }
-        runSearch();
-      });
+        var query = connection.query(
+            "UPDATE employee SET ?",
+            {
+              first_name: answer.employeeUpdate,
+              role_id: answer.updateRole,
+            },
+            function(err, res) {
+              if (err) throw err;
+              console.log(res.affectedRows + " product inserted!\n");
+          
+            }
+          )
+          runSearch();
     });
-}
+  }
 
-function songSearch() {
-  inquirer
-    .prompt({
-      name: "song",
-      type: "input",
-      message: "What song would you like to look for?"
-    })
-    .then(function(answer) {
-      console.log(answer.song);
-      connection.query("SELECT * FROM top5000 WHERE ?", { song: answer.song }, function(err, res) {
-        if (err) throw err;
-        console.log(
-          "Position: " +
-            res[0].position +
-            " || Song: " +
-            res[0].song +
-            " || Artist: " +
-            res[0].artist +
-            " || Year: " +
-            res[0].year
-        );
-        runSearch();
-      });
-    });
+// ending function
+
+function end() {
+    connection.end();
+    process.exit();
 }
